@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional, List
 
-from Model.Variant import Variant
+from Model.CollectionItem import CollectionItem
 
 
 @dataclass
@@ -10,4 +10,4 @@ class User:
     username: str
     location: str
     brickCount: int
-    collection: List[Variant] = field(default_factory=list)
+    collection: List[CollectionItem] = field(default_factory=list)

@@ -4,4 +4,4 @@ from dataclasses import dataclass
 @dataclass
 class Variant:
     color: str
-    str: int
+    count: int
