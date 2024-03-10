@@ -1,0 +1,6 @@
+
+*.pyc
+*.pyc
+*.pyc
+.idea/vcs.xml
+__pycache__/APIService.cpython-311.pyc
