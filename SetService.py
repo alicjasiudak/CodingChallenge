@@ -3,7 +3,6 @@ from typing import List
 from DataAccess.IAPIService import IAPIService
 from Model.Piece import Piece
 from Model.Set import Set
-from Model.User import User
 from Builders.SetBuilder import SetBuilder
 from Builders.UserBuilder import UserBuilder
 
@@ -17,53 +16,32 @@ class SetService:
         self.set_builder = SetBuilder(api_service)
 
     def available_sets_to_build_by_username(self, username: str) -> List[Set]:
-        user = self._get_all_user_data(username)
-        buildable_sets = self.find_buildable_by_user(user)
-        return buildable_sets
-
-    def find_buildable_by_user(self, user: User):
-        all_sets = self._get_all_sets_data()
+        user = self.user_builder.get_full_user_data_by_name(username)
+        all_sets = self.set_builder.get_all_sets_data()
         # eliminate the ones that have more total pieces than the user
-        potential_sets = []
-        for single_set in all_sets:
-            if single_set.totalPieces > user.brickCount:
-                print(f"The user cannot build {single_set.name} set, too little pieces")
-            else:
-                potential_sets.append(single_set)
-
-        buildable_sets = []
-        for potential_set in potential_sets:
-            if self._can_build_set(potential_set.pieces, user.collection):
-                buildable_sets.append(potential_set.name)
-        print(f"User {user.username} can build the following sets: {buildable_sets}")
+        buildable_sets = [
+            set_info.name
+            for set_info in all_sets
+            if set_info.totalPieces <= user.brickCount and self._can_build_set(set_info.pieces, user.collection)
+        ]
+        print(f"{username} is able to build {buildable_sets}")
         return buildable_sets
 
-    def _get_all_user_data(self, username: str) -> User:
-        user = self.user_builder.get_from_json_by_name(username)
-        return self.user_builder.get_from_json_by_id(user.id)
+    def _can_build_set(self, required_pieces: List[Piece], inventory_pieces: List[Piece]) -> bool:
+        missing_pieces = self._identify_missing_pieces(required_pieces, inventory_pieces)
+        return len(missing_pieces) == 0
 
-    def _get_all_sets_data(self) -> List[Set]:
-        all_sets = self.set_builder.get_set_list()
-        complete_sets_data = []
-        for every_set in all_sets:
-            complete_set_data = self._get_all_complete_set_data(every_set.id)
-            complete_sets_data.append(complete_set_data)
-        return complete_sets_data
-
-    def _get_all_complete_set_data(self, set_id) -> Set:
-        full_set_data = self.set_builder.get_set_by_id(set_id)
-        return full_set_data
+    def _identify_missing_pieces(self, required_pieces: List[Piece], inventory_pieces: List[Piece]) -> List[Piece]:
+        missing_pieces = []
+        for required in required_pieces:
+            inventory_quantity = self._get_piece_quantity_from_inventory(required, inventory_pieces)
+            if inventory_quantity < required.quantity:
+                missing_pieces.append(required)
+        return missing_pieces
 
     @staticmethod
-    def _can_build_set(required_pieces: List[Piece], inventory_pieces: List[Piece]) -> bool:
-        for required in required_pieces:
-            matched = False
-            for inventory in inventory_pieces:
-                if (required.part.designID == inventory.part.designID and
-                        required.part.material == inventory.part.material and
-                        required.quantity <= inventory.quantity):
-                    matched = True
-                    break
-            if not matched:
-                return False
-        return True
+    def _get_piece_quantity_from_inventory(piece: Piece, inventory_pieces: List[Piece]) -> int:
+        for inventory_piece in inventory_pieces:
+            if piece.part.designID == inventory_piece.part.designID and piece.part.material == inventory_piece.part.material:
+                return inventory_piece.quantity
+        return 0

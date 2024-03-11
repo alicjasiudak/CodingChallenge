@@ -27,3 +27,20 @@ class SetBuilder:
 
         return Set(id=set_data['id'], name=set_data['name'], setNumber=set_data['setNumber'], pieces=pieces,
                    totalPieces=set_data['totalPieces'])
+
+    def get_full_set_data_by_name(self, set_name: str) -> Set:
+        set_data = self.get_set_by_name(set_name)
+        full_set_data = self.get_set_by_id(set_data.id)
+        return full_set_data
+
+    def _get_all_complete_set_data(self, set_id) -> Set:
+        full_set_data = self.get_set_by_id(set_id)
+        return full_set_data
+
+    def get_all_sets_data(self) -> List[Set]:
+        all_sets = self.get_set_list()
+        complete_sets_data = []
+        for every_set in all_sets:
+            complete_set_data = self.get_set_by_id(every_set.id)
+            complete_sets_data.append(complete_set_data)
+        return complete_sets_data
